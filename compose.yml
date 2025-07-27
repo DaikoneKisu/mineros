@@ -1,27 +1,25 @@
 services:
-  mineros-backend:
+  app:
     build:
       context: .
-      args:
-        - APP_PORT=${APP_PORT}
+      dockerfile: app.Dockerfile
     depends_on:
-      mineros-database:
+      database:
         condition: service_healthy
-    ports:
-      - target: ${APP_PORT}
-        published: ${APP_PORT}
-    env_file:
-      - .env
-  mineros-database:
-    image: postgres:latest
+  database:
+    build:
+      context: .
+      dockerfile: database.Dockerfile
     restart: always
     ports:
-      - target: ${PGPORT}
-        published: ${PGPORT}
+      - ${PGPORT}:${PGPORT}
     volumes:
-      - mineros-volume:/var/lib/postgresql/data
-    env_file: .env
+      - database-volume:/var/lib/postgresql/data
+    env_file:
+      - .env
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}']
+      test: ["CMD-SHELL", "psql -d $${POSTGRES_DB} -U $${POSTGRES_USER} -c 'SELECT * FROM mineros_init' || exit 1"]
+      interval: 5m
+      retries: 0
 volumes:
-  mineros-volume:
+  database-volume:

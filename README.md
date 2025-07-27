@@ -13,21 +13,5 @@ PGPORT=5432
 ```
 
 ```bash
-docker-compose up -d
-```
-
-## Using Docker
-
-```pwsh
-docker volume create mineros-volume
-docker run -d -p 5432:5432 --name mineros -v mineros-volume:/var/lib/postgresql/data -e POSTGRES_PASSWORD=postgres postgres:15
-docker cp <backup_file> mineros:/home
-docker exec -i -t mineros bash
-```
-
-Once you are inside the container, create the database and restore it using:
-
-```bash
-psql -U postgres -c "CREATE DATABASE mineros;"
-pg_restore -U postgres -d mineros /home/<backup_file>
+docker compose up -d
 ```

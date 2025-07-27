@@ -11,3 +11,6 @@ wheels/
 
 # Environment variables
 .env
+
+# Database backup
+db/backup.sql.gz
