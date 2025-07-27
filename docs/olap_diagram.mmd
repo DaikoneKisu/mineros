@@ -1,0 +1,28 @@
+erDiagram
+    fact_game_session {
+        string id PK
+        decimal amount
+        string currency
+        timestamp datetime
+        string type
+    }
+
+    dim_provider {
+        string id PK
+        string name
+    }
+
+    dim_game {
+        string id PK
+        string name
+        string type
+    }
+
+    dim_player {
+        string id PK
+        string name
+    }
+
+    dim_provider o|--|{ fact_game_session : has
+    dim_game o|--|{ fact_game_session : has
+    dim_player o|--|{ fact_game_session : has
