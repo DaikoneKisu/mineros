@@ -1,0 +1,82 @@
+version: 2
+
+models:
+  - name: dim_player
+    description: "Players dimension"
+    columns:
+      - name: id
+        description: "The primary key for this table"
+        data_tests:
+          - unique
+          - not_null
+      - name: name
+        description: "The obfuscated name of the player"
+        data_tests:
+          - not_null
+      - name: age
+        description: "The age of the player in years"
+        data_tests:
+          - not_null
+
+  - name: dim_game
+    description: "Games dimension"
+    columns:
+      - name: id
+        description: "The primary key for this table"
+        data_tests:
+          - unique
+          - not_null
+      - name: name
+        description: "The obfuscated name of the game"
+        data_tests:
+          - not_null
+      - name: type
+        description: "The type of the game, e.g., slot, table"
+        data_tests:
+          - not_null
+  
+  - name: dim_provider
+    description: "Providers dimension"
+    columns:
+      - name: id
+        description: "The primary key for this table"
+        data_tests:
+          - unique
+          - not_null
+      - name: name
+        description: "The name of the provider"
+        data_tests:
+          - not_null
+  
+  - name: fact_game_session
+    description: "Fact table for game sessions"
+    columns:
+      - name: id
+        description: "The primary key for this table"
+        data_tests:
+          - unique
+          - not_null
+      - name: amount
+        description: "The amount of money involved in the session"
+        data_tests:
+          - not_null
+      - name: currency
+        description: "The currency used in the session"
+        data_tests:
+          - not_null
+      - name: datetime
+        description: "The timestamp of the session"
+        data_tests:
+          - not_null
+      - name: game_id
+        description: "Foreign key to the game dimension"
+        data_tests:
+          - not_null
+      - name: player_id
+        description: "Foreign key to the player dimension"
+        data_tests:
+          - not_null
+      - name: provider_id
+        description: "Foreign key to the provider dimension"
+        data_tests:
+          - not_null
