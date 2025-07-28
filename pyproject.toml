@@ -4,9 +4,20 @@ version = "0.1.0"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "alive-progress>=3.3.0",
-    "dbt-core>=1.10.5",
-    "dbt-postgres>=1.9.0",
-    "dlt[postgres,sql-database]>=1.14.1",
-    "psycopg2>=2.9.10",
+  "alive-progress>=3.3.0",
+  "dbt-core>=1.10.5",
+  "dbt-postgres>=1.9.0",
+  "dlt[postgres,sql-database]>=1.14.1",
+  "psycopg2>=2.9.10",
+  "pandas>=2.3.1",
+  "pydantic>=2.11.7",
+  "pydantic-settings>=2.10.1",
+  "sqlalchemy>=2.0.41",
 ]
+
+[project.scripts]
+mineros = "mineros.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
