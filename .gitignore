@@ -13,4 +13,4 @@ wheels/
 .env
 
 # Database backup
-db/backup.sql.gz
+db/betaso-backup.sql.gz

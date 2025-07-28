@@ -3,23 +3,46 @@ services:
     build:
       context: .
       dockerfile: app.Dockerfile
+    env_file: .env
     depends_on:
-      database:
+      betaso-database:
         condition: service_healthy
-  database:
+      mineros-database:
+        condition: service_healthy
+  betaso-database:
     build:
       context: .
-      dockerfile: database.Dockerfile
+      dockerfile: betaso-database.Dockerfile
     restart: always
     ports:
-      - ${PGPORT}:${PGPORT}
+      - ${BETASO_PGPORT}:${BETASO_PGPORT}
     volumes:
-      - database-volume:/var/lib/postgresql/data
-    env_file:
-      - .env
+      - betaso-database-volume:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${BETASO_POSTGRES_USER}
+      - POSTGRES_PASSWORD=${BETASO_POSTGRES_PASSWORD}
+      - POSTGRES_DB=${BETASO_POSTGRES_DB}
+      - PGPORT=${BETASO_PGPORT}
     healthcheck:
-      test: ["CMD-SHELL", "psql -d $${POSTGRES_DB} -U $${POSTGRES_USER} -c 'SELECT * FROM mineros_init' || exit 1"]
+      test: ["CMD-SHELL", "psql -d $${BETASO_POSTGRES_DB} -U $${BETASO_POSTGRES_USER} -c 'SELECT * FROM betaso_init' || exit 1"]
+      interval: 5m
+      retries: 0
+  mineros-database:
+    image: postgres:alpine
+    restart: always
+    ports:
+      - ${MINEROS_PGPORT}:${MINEROS_PGPORT}
+    volumes:
+      - mineros-database-volume:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${MINEROS_POSTGRES_USER}
+      - POSTGRES_PASSWORD=${MINEROS_POSTGRES_PASSWORD}
+      - POSTGRES_DB=${MINEROS_POSTGRES_DB}
+      - PGPORT=${MINEROS_PGPORT}
+    healthcheck:
+      test: ["CMD-SHELL", "psql -d $${MINEROS_POSTGRES_DB} -U $${MINEROS_POSTGRES_USER} -c 'SELECT 1' || exit 1"]
       interval: 5m
       retries: 0
 volumes:
-  database-volume:
+  betaso-database-volume:
+  mineros-database-volume:
