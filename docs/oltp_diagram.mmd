@@ -1,0 +1,74 @@
+erDiagram
+    user {
+        string uuid PK
+        date birthdate
+        string status_verify
+        boolean is_blocked
+    }
+
+    player {
+    }
+
+    wallet {
+        string uuid PK
+        decimal balance
+        string type
+        string currency
+    }
+
+    movement {
+        string id PK
+        decimal amount
+        string transaction_type
+        decimal balance
+    }
+
+    game_transaction {
+    }
+
+    game_movement_standoff {
+    }
+
+    play {
+        string id PK
+        string status
+    }
+
+    session {
+        string uuid PK
+        string game_mode
+        string status
+    }
+
+    game {
+        string uuid PK
+        string status
+        string type
+    }
+
+    game_movement_animalito {
+    }
+
+    animalito_play {
+        string id PK
+        decimal amount
+    }
+
+    game_movement_domino {
+    }
+
+    game_movement_ludo {
+    }
+
+    player ||--|| user : is
+    player ||--o{ wallet : has
+    wallet ||--o{ movement : has
+    game_transaction ||--|| movement : is
+    game_movement_standoff ||--|| game_transaction : is
+    play ||--|{ game_movement_standoff : has
+    session }|--|{ play : has
+    game ||--|{ session : has
+    game_movement_animalito ||--|| game_transaction : is
+    game_movement_animalito ||--|| animalito_play : has
+    game_movement_domino ||--|| game_transaction : is
+    game_movement_ludo ||--|| game_transaction : is
