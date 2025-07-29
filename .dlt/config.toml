@@ -1,0 +1,21 @@
+# put your configuration values here
+
+progress = "log"
+
+[runtime]
+log_level = "WARNING" # the system log level of dlt
+# use the dlthub_telemetry setting to enable/disable anonymous usage data reporting, see https://dlthub.com/docs/reference/telemetry
+dlthub_telemetry = true
+
+[data_writer]
+file_max_items = 100000
+file_max_bytes = 1000000
+
+[extract]
+workers = 2
+
+[normalize]
+workers = 2
+
+[load]
+workers = 2

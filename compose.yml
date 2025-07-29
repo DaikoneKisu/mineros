@@ -9,6 +9,17 @@ services:
         condition: service_healthy
       mineros-database:
         condition: service_healthy
+    develop:
+      watch:
+        - action: sync+restart
+          path: src/mineros
+          target: /mineros/src/mineros
+          ignore:
+            - __pycache__
+        - action: rebuild
+          path: pyproject.toml
+        - action: rebuild
+          path: uv.lock
   betaso-database:
     build:
       context: .
@@ -24,10 +35,13 @@ services:
       - POSTGRES_DB=${BETASO_POSTGRES_DB}
       - PGPORT=${BETASO_PGPORT}
     healthcheck:
-      test: ["CMD-SHELL", "psql -d $${BETASO_POSTGRES_DB} -U $${BETASO_POSTGRES_USER} -c 'SELECT * FROM betaso_init' || exit 1"]
+      test: ["CMD-SHELL", "psql -d $${POSTGRES_DB} -U $${POSTGRES_USER} -c 'SELECT * FROM betaso_init' || exit 1"]
       interval: 5m
       retries: 0
+      start_period: 5m
+      start_interval: 10s
   mineros-database:
+    shm_size: 8g
     image: postgres:alpine
     restart: always
     ports:
@@ -40,9 +54,11 @@ services:
       - POSTGRES_DB=${MINEROS_POSTGRES_DB}
       - PGPORT=${MINEROS_PGPORT}
     healthcheck:
-      test: ["CMD-SHELL", "psql -d $${MINEROS_POSTGRES_DB} -U $${MINEROS_POSTGRES_USER} -c 'SELECT 1' || exit 1"]
+      test: ["CMD-SHELL", "psql -d $${POSTGRES_DB} -U $${POSTGRES_USER} -c 'SELECT 1' || exit 1"]
       interval: 5m
       retries: 0
+      start_period: 5m
+      start_interval: 10s
 volumes:
   betaso-database-volume:
   mineros-database-volume:

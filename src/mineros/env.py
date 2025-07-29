@@ -13,6 +13,7 @@ class _Env(BaseSettings):
     )
 
     mineros_postgres_url: AnyUrl
+    mineros_postgres_schema: str
 
 env: _Env
 try:
