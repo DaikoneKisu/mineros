@@ -96,21 +96,34 @@ with tab1:
         mode_provider=('favorite_provider', lambda x: x.mode()[0])
     ).reset_index()
 
-    st.markdown(f"**Perfiles de los {k_optimal} cl煤steres encontrados:**")
+    st.markdown(f"**Perfiles de los {k_optimal} clústeres encontrados:**")
     st.dataframe(cluster_analysis.style.format({
         'avg_age': '{:.1f}',
         'avg_total_spent': '${:,.2f}',
-        'avg_retention_days': '{:.1f} d铆as'
+        'avg_retention_days': '{:.1f} días'
     }))
 
-    # Visualización de los clústeres
-    fig_clusters = px.scatter(df_players, 
-                              x='total_spent', 
-                              y='age', 
-                              color='cluster',
-                              hover_data=['name', 'favorite_game_type', 'retention_days'],
-                              title=f'Visualizaci贸n de {k_optimal} Cl煤steres de Jugadores',
-                              labels={'total_spent': 'Gasto Total (USD)', 'age': 'Edad', 'cluster': 'Cl煤ster'})
+    # Visualización de los clústeres con TSNE
+    from sklearn.manifold import TSNE
+    tsne_features = data_for_clustering.drop('cluster', axis=1)
+    # Para TSNE, las variables categóricas deben ser numéricas
+    tsne_features_encoded = tsne_features.copy()
+    for col in ['favorite_game_type', 'favorite_provider']:
+        if col in tsne_features_encoded.columns:
+            tsne_features_encoded[col] = tsne_features_encoded[col].astype('category').cat.codes
+    tsne = TSNE(n_components=2, random_state=42, perplexity=30)
+    tsne_result = tsne.fit_transform(tsne_features_encoded)
+    df_players['tsne_1'] = tsne_result[:,0]
+    df_players['tsne_2'] = tsne_result[:,1]
+    fig_clusters = px.scatter(
+        df_players,
+        x='tsne_1',
+        y='tsne_2',
+        color='cluster',
+        hover_data=['name', 'favorite_game_type', 'retention_days'],
+        title=f'Visualización TSNE de {k_optimal} Clústeres de Jugadores',
+        labels={'tsne_1': 'TSNE 1', 'tsne_2': 'TSNE 2', 'cluster': 'Clúster'}
+    )
     st.plotly_chart(fig_clusters, use_container_width=True)
 
 # =================================================================================================
@@ -143,29 +156,29 @@ with tab2:
     with st.expander("Ver datos en formato transaccional (One-Hot)"):
         st.dataframe(df_onehot.head())
 
-    st.subheader("2. Entrenamiento y Validaci贸n")
+    st.subheader("2. Entrenamiento y Validación")
     st.markdown("""
-    El "entrenamiento" implica ejecutar el algoritmo para generar reglas. La "validaci贸n" se realiza ajustando las m茅tricas clave para filtrar solo las reglas m谩s relevantes.
+    El "entrenamiento" implica ejecutar el algoritmo para generar reglas. La "validación" se realiza ajustando las métricas clave para filtrar solo las reglas más relevantes.
     - **Soporte (Support):** Frecuencia con la que aparece un conjunto de juegos en todas las transacciones.
-    - **Confianza (Confidence):** Probabilidad de que se juegue el juego B si ya se jug贸 el juego A.
-    - **Lift:** Mide la fuerza de la asociaci贸n. Un lift > 1 indica una asociaci贸n positiva.
+    - **Confianza (Confidence):** Probabilidad de que se juegue el juego B si ya se jugó el juego A.
+    - **Lift:** Mide la fuerza de la asociación. Un lift > 1 indica una asociación positiva.
     """)
 
     col1, col2 = st.columns(2)
-    min_support = col1.slider("Selecciona el Soporte M铆nimo (min_support):", 0.01, 0.2, 0.05)
-    min_confidence = col2.slider("Selecciona la Confianza M铆nima (min_confidence):", 0.1, 0.8, 0.3)
+    min_support = col1.slider("Selecciona el Soporte Mínimo (min_support):", 0.01, 0.2, 0.05)
+    min_confidence = col2.slider("Selecciona la Confianza Mínima (min_confidence):", 0.1, 0.8, 0.3)
 
     # Aplicar Apriori
     frequent_itemsets = apriori(df_onehot, min_support=min_support, use_colnames=True)
     
     if frequent_itemsets.empty:
-        st.warning("No se encontraron conjuntos de 铆tems frecuentes con el soporte actual. Intenta reducir el valor de 'Soporte M铆nimo'.")
+        st.warning("No se encontraron conjuntos de ítems frecuentes con el soporte actual. Intenta reducir el valor de 'Soporte Mínimo'.")
     else:
         rules = association_rules(frequent_itemsets, metric="confidence", min_threshold=min_confidence)
-        
-        st.subheader("Reglas de Asociaci贸n Encontradas")
+
+        st.subheader("Reglas de Asociación Encontradas")
         if rules.empty:
-            st.warning("No se encontraron reglas con la confianza actual. Intenta reducir el valor de 'Confianza M铆nima'.")
+            st.warning("No se encontraron reglas con la confianza actual. Intenta reducir el valor de 'Confianza Mínima'.")
         else:
             # Limpiar y mostrar las reglas
             rules['antecedents'] = rules['antecedents'].apply(lambda x: ', '.join(list(x)))
@@ -177,30 +190,30 @@ with tab2:
 # PESTA脩A 3: RANDOM FOREST
 # =================================================================================================
 with tab3:
-    st.header("Predicci贸n de Comportamiento con Random Forest Regressor")
-    with st.expander("Justificaci贸n del Modelo", expanded=True):
+    st.header("Predicción de Comportamiento con Random Forest Regressor")
+    with st.expander("Justificación del Modelo", expanded=True):
         st.markdown("""
-        Para predecir el tiempo de retenci贸n y el gasto futuro, necesitamos modelos de regresi贸n. Se ha seleccionado **Random Forest** porque:
+        Para predecir el tiempo de retención y el gasto futuro, necesitamos modelos de regresión. Se ha seleccionado **Random Forest** porque:
         - Es un modelo de *ensemble* robusto que **reduce el sobreajuste**.
         - Puede capturar **relaciones complejas y no lineales** entre las variables.
-        - Proporciona la **importancia de las variables (feature importance)**, permitiendo identificar qu茅 factores son los predictores m谩s fuertes.
+        - Proporciona la **importancia de las variables (feature importance)**, permitiendo identificar qué factores son los predictores más fuertes.
         """)
 
-    st.subheader("1. Preparaci贸n de Datos y Divisi贸n")
-    
+    st.subheader("1. Preparación de Datos y División")
+
     target_variable = st.selectbox(
         "Selecciona la variable a predecir:",
-        ('D铆as de Retenci贸n (retention_days)', 'Gasto Futuro (future_spend)')
+        ('Días de Retención (retention_days)', 'Gasto Futuro (future_spend)')
     )
-    
-    target_col = 'retention_days' if 'Retenci贸n' in target_variable else 'future_spend'
-    
+
+    target_col = 'retention_days' if 'Retención' in target_variable else 'future_spend'
+
     # Preparar X e y
     features = ['age', 'total_spent', 'total_sessions', 'favorite_game_type', 'favorite_provider']
     X = df_players[features]
     y = df_players[target_col]
 
-    # One-Hot Encoding para variables categ贸ricas
+    # One-Hot Encoding para variables categóricas
     X = pd.get_dummies(X, columns=['favorite_game_type', 'favorite_provider'], drop_first=True)
 
     # Dividir en entrenamiento y prueba
@@ -209,12 +222,12 @@ with tab3:
     st.markdown(f"""
     - **Variable Objetivo (y):** `{target_col}`
     - **Variables Predictoras (X):** `{', '.join(features)}`
-    - **Tama帽o del set de entrenamiento:** `{X_train.shape[0]} registros`
-    - **Tama帽o del set de prueba:** `{X_test.shape[0]} registros`
+    - **Tamaño del set de entrenamiento:** `{X_train.shape[0]} registros`
+    - **Tamaño del set de prueba:** `{X_test.shape[0]} registros`
     """)
 
-    st.subheader("2. Entrenamiento y Evaluaci贸n del Modelo")
-    
+    st.subheader("2. Entrenamiento y Evaluación del Modelo")
+
     # Entrenar el modelo
     rf_model = RandomForestRegressor(n_estimators=100, random_state=42, oob_score=True)
     rf_model.fit(X_train, y_train)
@@ -229,20 +242,20 @@ with tab3:
     st.markdown("Resultados en el conjunto de prueba:")
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Error Absoluto Medio (MAE)", f"{mae:.2f}")
-    col2.metric("Error Cuadr谩tico Medio (MSE)", f"{mse:.2f}")
-    col3.metric("Coeficiente de Determinaci贸n (R虏)", f"{r2:.2f}")
-    col4.metric("Out-of-Bag (OOB) Score", f"{oob:.2f}", help="Puntuaci贸n de validaci贸n cruzada interna de Random Forest.")
+    col2.metric("Error Cuadrático Medio (MSE)", f"{mse:.2f}")
+    col3.metric("Coeficiente de Determinación (R²)", f"{r2:.2f}")
+    col4.metric("Out-of-Bag (OOB) Score", f"{oob:.2f}", help="Puntuación de validación cruzada interna de Random Forest.")
 
-    st.subheader("3. An谩lisis de Resultados")
+    st.subheader("3. Análisis de Resultados")
     col1, col2 = st.columns([1, 1])
 
     with col1:
-        # Gr谩fico de Predicciones vs. Valores Reales
+        # Gráfico de Predicciones vs. Valores Reales
         st.markdown("**Predicciones vs. Valores Reales**")
         fig_pred = go.Figure()
         fig_pred.add_trace(go.Scatter(x=y_test, y=y_pred, mode='markers', name='Predicciones'))
         fig_pred.add_trace(go.Scatter(x=[y_test.min(), y_test.max()], y=[y_test.min(), y_test.max()], 
-                                      mode='lines', name='L铆nea Ideal', line=dict(color='red', dash='dash')))
+                                      mode='lines', name='Línea Ideal', line=dict(color='red', dash='dash')))
         fig_pred.update_layout(title='Valores Reales vs. Predichos',
                                xaxis_title='Valores Reales',
                                yaxis_title='Valores Predichos')
@@ -258,5 +271,5 @@ with tab3:
                          x='importance', 
                          y='feature', 
                          orientation='h',
-                         title='Importancia de cada variable en la predicci贸n')
+                         title='Importancia de cada variable en la predicción')
         st.plotly_chart(fig_imp, use_container_width=True)
