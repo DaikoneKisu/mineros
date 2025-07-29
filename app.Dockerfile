@@ -7,4 +7,6 @@ COPY . .
 
 RUN uv sync --locked
 
-ENTRYPOINT ["uv", "run", "mineros"]
+EXPOSE 8501
+
+ENTRYPOINT ["uv", "run", "streamlit", "run", "src/mineros/app.py", "--server.port=8501", "--server.address=0.0.0.0"]

@@ -13,7 +13,7 @@ from sklearn.preprocessing import StandardScaler
 from mlxtend.frequent_patterns import apriori, association_rules
 from mlxtend.preprocessing import TransactionEncoder
 
-from mineros import load_models_data, k_prototypes_fit, find_optimal_k
+from mineros import load_models_data, k_prototypes_fit, tsne_fit
 
 # --- Configuración de la página de Streamlit ---
 st.set_page_config(
@@ -28,7 +28,7 @@ df_transactions = df_transactions.rename(str, axis='columns')
 df_players = df_players.rename(str, axis='columns')
 
 # --- Título Principal ---
-st.title("🎮 Pipeline de Modelos de Machine Learning para Gaming")
+st.title("🎮 Pipeline de Modelos de Machine Learning")
 st.markdown("Una aplicación para explorar segmentación de clientes, reglas de asociación y modelos predictivos.")
 
 # --- Pestañas para cada modelo ---
@@ -65,7 +65,13 @@ with tab1:
     
     matrix = data_for_clustering.to_numpy()
 
-    k_range, costs = find_optimal_k(matrix, categorical_indices)
+    costs = []
+    k_range = range(2, 8)
+    for k in k_range:
+        print(f"Training for {k} clusters...")
+        kproto = k_prototypes_fit(matrix, categorical_indices, n_clusters=k)
+        print(f"Cost for {k} clusters: {kproto.cost_}")
+        costs.append(kproto.cost_)
 
     # Gráfico del Codo
     fig_elbow = go.Figure()
@@ -103,27 +109,14 @@ with tab1:
         'avg_retention_days': '{:.1f} días'
     }))
 
-    # Visualización de los clústeres con TSNE
-    from sklearn.manifold import TSNE
-    tsne_features = data_for_clustering.drop('cluster', axis=1)
-    # Para TSNE, las variables categóricas deben ser numéricas
-    tsne_features_encoded = tsne_features.copy()
-    for col in ['favorite_game_type', 'favorite_provider']:
-        if col in tsne_features_encoded.columns:
-            tsne_features_encoded[col] = tsne_features_encoded[col].astype('category').cat.codes
-    tsne = TSNE(n_components=2, random_state=42, perplexity=30)
-    tsne_result = tsne.fit_transform(tsne_features_encoded)
-    df_players['tsne_1'] = tsne_result[:,0]
-    df_players['tsne_2'] = tsne_result[:,1]
-    fig_clusters = px.scatter(
-        df_players,
-        x='tsne_1',
-        y='tsne_2',
-        color='cluster',
-        hover_data=['name', 'favorite_game_type', 'retention_days'],
-        title=f'Visualización TSNE de {k_optimal} Clústeres de Jugadores',
-        labels={'tsne_1': 'TSNE 1', 'tsne_2': 'TSNE 2', 'cluster': 'Clúster'}
-    )
+    # Visualización de los clústeres
+    fig_clusters = px.scatter(df_players, 
+                              x='total_spent', 
+                              y='age', 
+                              color='cluster',
+                              hover_data=['name', 'favorite_game_type', 'retention_days'],
+                              title=f'Visualización de {k_optimal} Clústeres de Jugadores',
+                              labels={'total_spent': 'Gasto Total (VES)', 'age': 'Edad', 'cluster': 'Clúster'})
     st.plotly_chart(fig_clusters, use_container_width=True)
 
 # =================================================================================================
